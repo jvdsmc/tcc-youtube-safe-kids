@@ -116,6 +116,23 @@ TRAINING_CONFIG = {
         'greater_is_better': True,
         'early_stopping_patience': 5,
         'seed': 42
+    },
+    'AS_best': {
+        'num_train_epochs': 5,
+        'per_device_train_batch_size': 8,
+        'per_device_eval_batch_size': 8,
+        'learning_rate': 5e-5,
+        'warmup_steps': 500,
+        'weight_decay': 0.01,
+        'logging_steps': 10,
+        'eval_steps': 500,
+        'save_steps': 500,
+        'evaluation_strategy': 'steps',
+        'save_strategy': 'steps',
+        'load_best_model_at_end': True,
+        'metric_for_best_model': 'eval_f1',
+        'greater_is_better': True,
+        'seed': 42
     }
 }
 

@@ -78,8 +78,7 @@ class TrainingHelper:
                 examples['text'],
                 padding='max_length',
                 truncation=True,
-                max_length=max_length,
-                return_tensors='pt'
+                max_length=max_length
             )
         
         # Cria datasets
