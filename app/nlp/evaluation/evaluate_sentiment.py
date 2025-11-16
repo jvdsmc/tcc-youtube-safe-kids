@@ -8,6 +8,7 @@ no conjunto de teste e gera relatórios detalhados.
 import logging
 import sys
 import os
+import pandas as pd  # <-- CORREÇÃO: Faltava este import
 from pathlib import Path
 
 # Adiciona o diretório raiz ao path
@@ -79,6 +80,13 @@ def main():
         batch_size=32
     )
     
+    # Adiciona a chamada para gerar o relatório e os gráficos
+    try:
+        logger.info("Gerando relatório de avaliação e gráficos...")
+        evaluator.generate_report(results, model_path=str(model_path), save_plots=True)
+    except Exception as e:
+        logger.error(f"Erro ao gerar relatório ou gráficos: {e}")
+    
     logger.info("=" * 60)
     logger.info("Avaliação concluída!")
     logger.info("=" * 60)
@@ -96,10 +104,13 @@ def main():
     
     if 'classification_report' in results:
         print("\nRelatório de Classificação:")
-        print(results['classification_report'])
+        # Imprime o relatório de classificação de forma legível
+        report_dict = results['classification_report']
+        print(pd.DataFrame(report_dict).transpose())
     
     print(f"\nResultados completos salvos em: {output_dir}")
+    print(f"Gráfico da Matriz de Confusão salvo em: {output_dir}")
+
 
 if __name__ == "__main__":
     main()
-

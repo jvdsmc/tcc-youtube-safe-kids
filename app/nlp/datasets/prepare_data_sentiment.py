@@ -3,9 +3,12 @@ Script de preparação de dados para Análise de Sentimentos (AS).
 
 Este script prepara os dados para treinamento do modelo de análise de sentimentos,
 dividindo o dataset em conjuntos de treino, validação e teste.
+
+*** Versão Modificada com Oversampling para balancear o treino ***
 """
 
 import pandas as pd
+from sklearn.utils import resample  # <-- ADICIONADO PARA OVERSAMPLING
 from sklearn.model_selection import train_test_split
 import logging
 import sys
@@ -74,7 +77,7 @@ def prepare_data():
     numeric_labels = [numeric_labels[i] for i in valid_indices]
     
     logger.info(f"Total de amostras válidas: {len(texts)}")
-    logger.info(f"Distribuição de classes: {pd.Series(numeric_labels).value_counts().to_dict()}")
+    logger.info(f"Distribuição de classes (antes da divisão): {pd.Series(numeric_labels).value_counts().to_dict()}")
     
     # Divisão: 80% treino, 10% validação, 10% teste
     train_texts, temp_texts, train_labels, temp_labels = train_test_split(
@@ -90,8 +93,50 @@ def prepare_data():
         random_state=DATA_SPLIT['random_state'],
         stratify=temp_labels if DATA_SPLIT['stratify'] else None
     )
+
+    # --- INÍCIO DO CÓDIGO DE OVERSAMPLING (BALANCEAMENTO) ---
+    logger.info("Balanceando o conjunto de treino com Oversampling...")
+    logger.info(f"Distribuição de treino (antes): {pd.Series(train_labels).value_counts().to_dict()}")
+
+    # Converter para DataFrame para facilitar
+    train_df = pd.DataFrame({'text': train_texts, 'label': train_labels})
+
+    # Separar classes
+    df_neg = train_df[train_df['label'] == 0]
+    df_neu = train_df[train_df['label'] == 1]
+    df_pos = train_df[train_df['label'] == 2]
+
+    # Pegar a contagem da classe majoritária (Negativo)
+    # No seu output, o treino Negativo (0) tinha 843 amostras
+    max_count = len(df_neg)
+    logger.info(f"Classe majoritária (Negativo) tem {max_count} amostras. Balanceando outras classes para este número.")
+
+    # Fazer Upsample (reamostragem com reposição) das classes minoritárias
+    df_neu_upsampled = resample(df_neu,
+                              replace=True,     # Amostragem com reposição
+                              n_samples=max_count,  # Para igualar à classe majoritária
+                              random_state=DATA_SPLIT['random_state']) # Reprodutibilidade
+
+    df_pos_upsampled = resample(df_pos,
+                              replace=True,
+                              n_samples=max_count,
+                              random_state=DATA_SPLIT['random_state'])
+
+    # Combinar de volta (agora balanceado)
+    train_df_balanced = pd.concat([df_neg, df_neu_upsampled, df_pos_upsampled])
     
-    logger.info(f"Divisão dos dados:")
+    # Embaralhar os dados combinados
+    train_df_balanced = train_df_balanced.sample(frac=1, random_state=DATA_SPLIT['random_state']).reset_index(drop=True)
+
+    # Converter de volta para listas
+    train_texts = train_df_balanced['text'].tolist()
+    train_labels = train_df_balanced['label'].tolist()
+
+    logger.info(f"Tamanho do conjunto de treino após balanceamento: {len(train_texts)}")
+    logger.info(f"Nova distribuição de treino (depois): {pd.Series(train_labels).value_counts().to_dict()}")
+    # --- FIM DO CÓDIGO DE OVERSAMPLING ---
+    
+    logger.info(f"Divisão dos dados (final):")
     logger.info(f"  Treino: {len(train_texts)} amostras")
     logger.info(f"  Validação: {len(val_texts)} amostras")
     logger.info(f"  Teste: {len(test_texts)} amostras")
@@ -112,8 +157,10 @@ if __name__ == "__main__":
     print(f"Teste: {pd.Series(test_labels).value_counts().to_dict()}")
     
     print("\n=== Exemplos de Textos ===")
-    print(f"Treino - Texto 1: {train_texts[0]}")
-    print(f"Treino - Label 1: {train_labels[0]} ({['Negativo', 'Neutro', 'Positivo'][train_labels[0]]})")
-    print(f"\nValidação - Texto 1: {val_texts[0]}")
-    print(f"Validação - Label 1: {val_labels[0]} ({['Negativo', 'Neutro', 'Positivo'][val_labels[0]]})")
-
+    # Pode dar erro se o treino estiver vazio, mas com oversampling é seguro
+    if len(train_texts) > 0:
+        print(f"Treino - Texto 1: {train_texts[0]}")
+        print(f"Treino - Label 1: {train_labels[0]} ({['Negativo', 'Neutro', 'Positivo'][train_labels[0]]})")
+    if len(val_texts) > 0:
+        print(f"\nValidação - Texto 1: {val_texts[0]}")
+        print(f"Validação - Label 1: {val_labels[0]} ({['Negativo', 'Neutro', 'Positivo'][val_labels[0]]})")

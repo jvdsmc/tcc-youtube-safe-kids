@@ -1,0 +1,49 @@
+RELATÓRIO DE AVALIAÇÃO - AS
+==================================================
+
+Data da avaliação: 14/11/2025 01:21:09
+Modelo avaliado: C:\Users\joaov\OneDrive\Área de Trabalho\YoutubeSafeKids\YouTubeSafeKids-Python\app\nlp\models\trained\AS_sentiment_v1_20251113_232051
+Tarefa: AS
+Classes: Negativo, Neutro, Positivo
+
+MÉTRICAS GERAIS
+--------------------
+Acurácia: 0.8667
+F1-Score (Macro): 0.7969
+F1-Score (Weighted): 0.8646
+Precisão (Macro): 0.8066
+Recall (Macro): 0.7887
+
+AUC-ROC
+----------
+AUC-ROC (macro): 0.9399
+AUC-ROC (weighted): 0.9460
+
+MÉTRICAS POR CLASSE
+-------------------------
+Negativo:
+  Precisão: 0.9099
+  Recall: 0.9528
+  F1-Score: 0.9309
+  Suporte: 106
+
+Neutro:
+  Precisão: 0.8431
+  Recall: 0.7818
+  F1-Score: 0.8113
+  Suporte: 55
+
+Positivo:
+  Precisão: 0.6667
+  Recall: 0.6316
+  F1-Score: 0.6486
+  Suporte: 19
+
+MATRIZ DE CONFUSÃO
+--------------------
+Predito →
+Real ↓
+        Negativo  NeutroPositivo
+Negativo     101       3       2
+  Neutro       8      43       4
+Positivo       2       5      12
