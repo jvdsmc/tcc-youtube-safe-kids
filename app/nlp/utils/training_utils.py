@@ -14,8 +14,8 @@ from transformers import (
     BertForSequenceClassification,
     BertTokenizer,
     TrainingArguments,
-    Trainer,
-    EarlyStoppingCallback
+    Trainer
+    # EarlyStoppingCallback removido para evitar conflito no Windows
 )
 from datasets import Dataset
 import logging
@@ -129,26 +129,6 @@ class TrainingHelper:
     ) -> TrainingArguments:
         """
         Cria argumentos de treinamento padronizados.
-        
-        Args:
-            output_dir: Diretório de saída
-            num_train_epochs: Número de épocas
-            per_device_train_batch_size: Batch size para treino
-            per_device_eval_batch_size: Batch size para avaliação
-            learning_rate: Taxa de aprendizado
-            warmup_steps: Passos de warmup
-            weight_decay: Decaimento de peso
-            logging_steps: Frequência de logging
-            eval_steps: Frequência de avaliação
-            save_steps: Frequência de salvamento
-            evaluation_strategy: Estratégia de avaliação
-            save_strategy: Estratégia de salvamento
-            load_best_model_at_end: Carregar melhor modelo ao final
-            metric_for_best_model: Métrica para seleção do melhor modelo
-            greater_is_better: Se maior valor da métrica é melhor
-            
-        Returns:
-            TrainingArguments configurado
         """
         return TrainingArguments(
             output_dir=output_dir,
@@ -167,19 +147,13 @@ class TrainingHelper:
             load_best_model_at_end=load_best_model_at_end,
             metric_for_best_model=metric_for_best_model,
             greater_is_better=greater_is_better,
-            report_to=None,  # Desabilita wandb/tensorboard por padrão
+            report_to=None,
             seed=42
         )
     
     def compute_metrics(self, eval_pred):
         """
         Computa métricas durante o treinamento.
-        
-        Args:
-            eval_pred: Predições e labels verdadeiros
-            
-        Returns:
-            Dict com métricas
         """
         from sklearn.metrics import accuracy_score, precision_recall_fscore_support
         
@@ -208,16 +182,6 @@ class TrainingHelper:
     ) -> Tuple[BertForSequenceClassification, Trainer]:
         """
         Treina o modelo.
-        
-        Args:
-            train_dataset: Dataset de treino
-            val_dataset: Dataset de validação
-            num_labels: Número de classes
-            training_args: Argumentos de treinamento
-            model_path: Caminho para modelo pré-treinado (opcional)
-            
-        Returns:
-            Tuple com modelo treinado e trainer
         """
         # Carrega o modelo
         if model_path and os.path.exists(model_path):
@@ -229,14 +193,14 @@ class TrainingHelper:
                 self.model_name, num_labels=num_labels
             )
         
-        # Cria o trainer
+        # Cria o trainer (SEM EarlyStoppingCallback para evitar erro no Windows/No-Checkpoint)
         trainer = Trainer(
             model=model,
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset,
             compute_metrics=self.compute_metrics,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
+            callbacks=None # Removido explicitamente
         )
         
         logger.info(f"Iniciando treinamento para {self.task_name}")
@@ -259,14 +223,6 @@ class TrainingHelper:
     ):
         """
         Salva o modelo com metadados.
-        
-        Args:
-            model: Modelo treinado
-            tokenizer: Tokenizador
-            output_dir: Diretório de saída
-            training_args: Argumentos de treinamento
-            metrics: Métricas finais
-            additional_info: Informações adicionais
         """
         # Salva modelo e tokenizador
         model.save_pretrained(output_dir)
@@ -299,12 +255,6 @@ class TrainingHelper:
     def get_output_dir(self, experiment_name: Optional[str] = None) -> str:
         """
         Gera diretório de saída para o modelo.
-        
-        Args:
-            experiment_name: Nome do experimento (opcional)
-            
-        Returns:
-            Caminho do diretório de saída
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
@@ -325,16 +275,6 @@ def create_training_config(
 ) -> Dict[str, Any]:
     """
     Cria configuração padrão para treinamento.
-    
-    Args:
-        task: Nome da tarefa
-        epochs: Número de épocas
-        batch_size: Tamanho do batch
-        learning_rate: Taxa de aprendizado
-        max_length: Comprimento máximo das sequências
-        
-    Returns:
-        Dict com configuração
     """
     return {
         'task': task,

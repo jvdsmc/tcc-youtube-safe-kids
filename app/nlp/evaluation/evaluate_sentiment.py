@@ -8,7 +8,7 @@ no conjunto de teste e gera relatórios detalhados.
 import logging
 import sys
 import os
-import pandas as pd  # <-- CORREÇÃO: Faltava este import
+import pandas as pd
 from pathlib import Path
 
 # Adiciona o diretório raiz ao path
@@ -17,7 +17,8 @@ sys.path.insert(0, project_root)
 
 from app.nlp.models.bertimbau_sentiment import BertimbauSentiment
 from app.nlp.evaluation.model_evaluator import ModelEvaluator
-from app.nlp.datasets.prepare_data_sentiment import prepare_data
+# CORREÇÃO: Importa a função correta criada para o Cross-Validation
+from app.nlp.datasets.prepare_data_sentiment import get_data_for_cv_and_test
 from app.nlp.config import get_task_config
 
 # Configuração de logging
@@ -34,14 +35,19 @@ def main():
     logger.info("=" * 60)
     
     # Prepara dados de teste
-    logger.info("Preparando dados de teste...")
-    _, _, _, _, test_texts, test_labels = prepare_data()
+    logger.info("Carregando conjunto de TESTE (Holdout 20%)...")
+    
+    # A função retorna ((treino_x, treino_y), (teste_x, teste_y))
+    # Pegamos apenas a segunda parte (teste)
+    _, (test_texts, test_labels) = get_data_for_cv_and_test()
+    
+    logger.info(f"Total de amostras de teste: {len(test_texts)}")
     
     # Configuração da tarefa
     task_config = get_task_config('AS')
     class_names = task_config['classes']
     
-    # Caminho do modelo treinado (ajuste conforme necessário)
+    # Caminho do modelo treinado
     # Por padrão, busca o modelo mais recente no diretório de modelos treinados
     models_dir = Path(__file__).parent.parent / 'models' / 'trained'
     
@@ -80,7 +86,7 @@ def main():
         batch_size=32
     )
     
-    # Adiciona a chamada para gerar o relatório e os gráficos
+    # Gera relatório e gráficos
     try:
         logger.info("Gerando relatório de avaliação e gráficos...")
         evaluator.generate_report(results, model_path=str(model_path), save_plots=True)
@@ -93,7 +99,7 @@ def main():
     logger.info(f"Resultados salvos em: {output_dir}")
     
     print("\n" + "=" * 60)
-    print("RESULTADOS DA AVALIAÇÃO")
+    print("RESULTADOS DA AVALIAÇÃO (CONJUNTO HOLDOUT)")
     print("=" * 60)
     print(f"Acurácia: {results['accuracy']:.4f}")
     print(f"F1-Score (macro): {results['f1_macro']:.4f}")
@@ -104,7 +110,6 @@ def main():
     
     if 'classification_report' in results:
         print("\nRelatório de Classificação:")
-        # Imprime o relatório de classificação de forma legível
         report_dict = results['classification_report']
         print(pd.DataFrame(report_dict).transpose())
     

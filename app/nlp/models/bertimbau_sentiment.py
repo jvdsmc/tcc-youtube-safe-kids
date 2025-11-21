@@ -188,11 +188,12 @@ class BertimbauSentiment(BertimbauBase):
         training_config = {k: v for k, v in training_config.items() if k != 'seed'}
         
         # === CORREÇÃO PARA O ERRO DE PERMISSÃO DO WINDOWS ===
-        # Forçamos o modelo a NÃO salvar checkpoints intermediários (pastas tmp-checkpoint).
+        # Forçamos o modelo a NÃO salvar checkpoints intermediários e NÃO tentar carregar o melhor no final.
         # Ele só vai salvar o modelo final quando acabar o treino.
-        logger.info("Desativando checkpoints intermediários para evitar erro de permissão no Windows.")
+        logger.info("Desativando checkpoints e load_best_model_at_end para evitar erro do Windows.")
         training_config['save_strategy'] = 'no' 
         training_config['save_steps'] = 0
+        training_config['load_best_model_at_end'] = False # <--- ESSENCIAL AGORA
         # ====================================================
         
         training_args = training_helper.get_training_args(
